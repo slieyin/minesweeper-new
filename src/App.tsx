@@ -10,7 +10,21 @@ function App() {
   const [board, setBoard] = useState<CellData[][]>([]);
   const [status, setStatus] = useState<GameStatus>('idle');
   const [timer, setTimer] = useState(0);
+  
+  // Refs to access latest state inside stable callbacks without triggering re-renders of children
+  // This solves the "disappearing flags" bug caused by stale closures in memoized Cell components
+  const boardRef = useRef(board);
+  const statusRef = useRef(status);
   const timerRef = useRef<number | undefined>(undefined);
+
+  // Keep refs synced with state
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const initGame = useCallback(() => {
     setBoard(createBoard(difficulty.rows, difficulty.cols));
@@ -35,18 +49,21 @@ function App() {
   }, [status]);
 
   const handleCellClick = useCallback((row: number, col: number) => {
-    if (status === 'won' || status === 'lost') return;
+    const currentStatus = statusRef.current;
+    const currentBoard = boardRef.current;
+
+    if (currentStatus === 'won' || currentStatus === 'lost') return;
 
     // Safe Start
-    if (status === 'idle') {
+    if (currentStatus === 'idle') {
       setStatus('playing');
-      const boardWithMines = initializeMines(board, difficulty, row, col);
+      const boardWithMines = initializeMines(currentBoard, difficulty, row, col);
       const { board: newBoard } = revealCells(boardWithMines, row, col);
       setBoard(newBoard);
       return;
     }
 
-    const { board: newBoard, exploded } = revealCells(board, row, col);
+    const { board: newBoard, exploded } = revealCells(currentBoard, row, col);
     setBoard(newBoard);
 
     if (exploded) {
@@ -55,12 +72,15 @@ function App() {
       setStatus('won');
       triggerWinEffect();
     }
-  }, [board, status, difficulty]);
+  }, [difficulty]);
 
   const handleCellRightClick = useCallback((row: number, col: number) => {
-    if (status !== 'playing' && status !== 'idle') return;
+    const currentStatus = statusRef.current;
+    const currentBoard = boardRef.current;
 
-    const newBoard = board.map(r => r.map(c => ({ ...c })));
+    if (currentStatus !== 'playing' && currentStatus !== 'idle') return;
+
+    const newBoard = currentBoard.map(r => r.map(c => ({ ...c })));
     const cell = newBoard[row][col];
 
     if (cell.status === 'revealed') return;
@@ -72,7 +92,7 @@ function App() {
     }
 
     setBoard(newBoard);
-  }, [board, status]);
+  }, []);
 
   const triggerWinEffect = () => {
     const duration = 3000;
