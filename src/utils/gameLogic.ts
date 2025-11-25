@@ -97,7 +97,6 @@ export const revealCells = (
   const queue: [number, number][] = [[row, col]];
   const rows = board.length;
   const cols = board[0].length;
-  let exploded = false;
 
   // Handle first click if it is a mine (defensive check)
   if (board[row][col].isMine) {

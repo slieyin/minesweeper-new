@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { CellData, GameStatus, Difficulty, DIFFICULTIES } from './types';
 import { createBoard, initializeMines, revealCells, checkWin, countFlags } from './utils/gameLogic';
