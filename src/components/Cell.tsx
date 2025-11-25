@@ -22,15 +22,22 @@ const Cell: React.FC<CellProps> = ({ data, onClick, onRightClick, disabled }) =>
   };
 
   const handleFlag = (e: React.SyntheticEvent) => {
-    e.preventDefault();
+    // If it's a touch event or manual call, prevent default to stop ghost clicks
+    if (e.type === 'contextmenu') {
+        e.preventDefault();
+    }
+    
     if (disabled || status === 'revealed') return;
     onRightClick(row, col);
   };
 
   // Mobile Long Press Hook
+  // We pass handleFlag as both the Long Press handler AND the Context Menu handler (desktop right click)
+  // The hook internal logic prevents double-firing.
   const longPressProps = useLongPress(handleFlag, handleClick, {
     delay: 400, 
-    shouldPreventDefault: true
+    shouldPreventDefault: true,
+    onContext: handleFlag 
   });
 
   // Determine appearance
@@ -69,15 +76,11 @@ const Cell: React.FC<CellProps> = ({ data, onClick, onRightClick, disabled }) =>
     }
   }
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleFlag(e);
-  };
-
   return (
     <div
       {...longPressProps}
-      onContextMenu={handleContextMenu}
+      // Note: We removed the manual onContextMenu={handleContextMenu} here 
+      // because longPressProps now contains the smart onContextMenu handler.
       className={twMerge(baseClasses, stateClasses)}
     >
       {content}
